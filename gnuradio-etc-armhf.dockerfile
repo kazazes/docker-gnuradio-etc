@@ -7,7 +7,9 @@ ENV PYBOMBS_PREFIX=/pybombs
 
 RUN echo "deb http://ppa.launchpad.net/bladerf/bladerf/ubuntu xenial main" >> /etc/apt/sources.list \
   && echo "deb-src http://ppa.launchpad.net/bladerf/bladerf/ubuntu xenial main" >> /etc/apt/sources.list \
-  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 188FE585DD24922CE9CD1EE9BE99746B2FB21B35
+  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 188FE585DD24922CE9CD1EE9BE99746B2FB21B35 \
+  && sed -i -e "s/archive.ubuntu.com/mirrors.accretive-networks.net/" /etc/apt/sources.list \
+  && sed -i -e "s/ports.ubuntu.com/us.ports.ubuntu.com/" /etc/apt/sources.list
 
 RUN apt-get -q update \
   && apt-get -y -q install --no-install-recommends \
@@ -34,7 +36,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && python /tmp/
   && rm -rf /root/.cache/
 
 RUN pybombs recipes add-defaults \
-  && sed -i -e "s/-DENABLE_GRC=ON/-DENABLE_GRC=OFF/g" -e "s/-DENABLE_GR_QTGUI=ON/-DENABLE_GR_QTGUI=OFF/g" /root/.pybombs/recipes/gr-recipes/gnuradio.lwr
+  && sed -i -e "s/-DENABLE_GRC=ON/-DENABLE_GRC=OFF/g" -e "s/-DENABLE_GR_QTGUI=ON/-DENABLE_GR_QTGUI=OFF/g" -e "s/-DENABLE_DOXYGEN=$builddocs/-DENABLE_DOXYGEN=OFF/g" /root/.pybombs/recipes/gr-recipes/gnuradio.lwr
 RUN pybombs prefix init ${PYBOMBS_PREFIX} -a master \
   && pybombs config default_prefix master && pybombs config makewidth $(nproc) \
   && pybombs config --env DEBIAN_FRONTEND noninteractive \
@@ -53,7 +55,7 @@ RUN pybombs prefix init ${PYBOMBS_PREFIX} -a master \
   && pybombs config --package gnuradio gitbranch v3.7.13.4
 
 RUN apt-get update && pybombs -v install --deps-only gnuradio && rm -rf /var/lib/apt/lists/* && rm -rf /pybombs/src
-RUN pybombs -vv install gnuradio && rm -rf /pybombs/src/
+RUN pybombs -vv install gnuradio && rm -rf /pybombs/src/ /pybombs/share/doc /pybombs/lib/uhd/tests
 
 RUN rm -rf /tmp/* && apt-get -y autoremove --purge \
   && apt-get -y clean && apt-get -y autoclean
@@ -80,6 +82,7 @@ RUN pybombs -v install \
   bladeRF \
   gr-op25 \
   && sed 's/@BLADERF_GROUP@/plugdev/g' ./src/bladeRF/host/misc/udev/88-nuand.rules.in > ./src/bladeRF/host/misc/udev/88-nuand.rules \
+  && mkdir -p /etc/udev/rules.d/ \
   && cp ./src/bladeRF/host/misc/udev/88-nuand.rules /etc/udev/rules.d/ \
   && rm -rf ./src/
 
