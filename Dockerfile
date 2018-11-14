@@ -1,1 +1,1 @@
-./gnuradio-etc-amd64.dockerfile
+./gnuradio-etc-armhf.dockerfile
